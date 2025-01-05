@@ -3,20 +3,33 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Install create-next-app globally
+RUN npm install -g create-next-app
 
-# Install dependencies
-RUN npm install
+# Create a shell script to setup the project
+RUN echo '#!/bin/sh\n\
+if [ ! -f "package.json" ]; then\n\
+    echo "Creating new Next.js project..."\n\
+    yes | create-next-app@latest . \\\n\
+        --typescript \\\n\
+        --tailwind \\\n\
+        --eslint \\\n\
+        --app \\\n\
+        --src-dir \\\n\
+        --no-turbo \\\n\
+        --import-alias "@/*"\n\
+fi\n\
+\n\
+echo "Installing dependencies..."\n\
+npm install\n\
+\n\
+echo "Starting development server..."\n\
+npm run dev\n' > /app/init.sh
 
-# Copy the rest of the application
-COPY . .
-
-# Build the Next.js app
-RUN npm run build
+RUN chmod +x /app/init.sh
 
 # Expose port 3000
 EXPOSE 3000
 
-# Start the app
-CMD ["npm", "run", "dev"]
+# Start command
+CMD ["/app/init.sh"]
